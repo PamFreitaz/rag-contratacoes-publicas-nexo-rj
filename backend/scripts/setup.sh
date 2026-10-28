@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bootstrap do backend RAG em uma máquina nova (Linux/macOS).
 # Cria o .venv, instala o lock de dependências, copia .env.example -> .env
-# quando faltar, e confere os artefatos da v6.
+# quando faltar, e confere os dados do acervo (pacote da v7, baixado à parte).
 # Uso: bash scripts/setup.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."

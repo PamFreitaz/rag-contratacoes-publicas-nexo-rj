@@ -181,7 +181,7 @@ Já estão implementados:
 - feedback do usuário e histórico de consultas persistidos em SQLite local ([src/history_store.py](src/history_store.py)), com textos mascarados, expurgo após `HISTORY_RETENTION_DAYS` dias e a resposta completa comprimida com zlib (o campo só é lido inteiro, nunca pesquisado);
 - histórico e trace com dois personas: `X-API-Key` igual a `RAG_API_KEY` (quem opera a demo) vê tudo; o header `X-Session-Id` vê só a própria conversa; sem nenhum dos dois, `401`. `HISTORY_PUBLIC=true` abre o histórico geral para uma demo (desligado por padrão);
 - CORS configurado para desenvolvimento local e para a origem `https://etuarda.github.io`;
-- frontend em repositório separado, publicado em [https://etuarda.github.io/frontendRAG/](https://etuarda.github.io/frontendRAG/): consome consulta, feedback, trace da pergunta e da conversa, catálogo e resumo do projeto, e mostra os `avisos` da resposta. Na demo, o backend roda na máquina de quem apresenta e fica público por um túnel ngrok no domínio fixo gratuito (README, seção 9.1); o site ainda precisa ser publicado apontando para ele;
+- frontend na pasta [../frontend/](../frontend/), copiado do repositório em que foi desenvolvido ([Etuarda/frontendRAG](https://github.com/Etuarda/frontendRAG)) e publicado em [https://etuarda.github.io/frontendRAG/](https://etuarda.github.io/frontendRAG/): consome consulta, feedback, trace da pergunta e da conversa, catálogo e resumo do projeto, e mostra os `avisos` da resposta. Na demo, o backend rodou na máquina de quem apresentou e ficou público por um túnel ngrok no domínio fixo gratuito ([docs/README_TECNICO.md](docs/README_TECNICO.md), seção 9.1);
 - suporte a certificados HTTPS com `certifi` sem desabilitar validação SSL;
 - golden set com 36 casos e critérios de conteúdo (radicais, teto de confiança, negação), mais um conjunto de busca com 47 perguntas e a ablação do rerank. Na v7, a rodada de 2026-10-19 com o código da `main` em `b93164c` (`golden-2026-10-19-v7-36`) deu **31/36 (86%)**; com os ajustes seguintes no prompt (insuficiência dita de forma explícita), na ordem dos trechos de perguntas mistas e nos apelidos de fornecedor, a rodada `golden-2026-10-19-v7-36-ajustes` deu **33/36 (92%)**: rota 97%, recusa 100%, citação 100%, conteúdo 92%, sem erro de provedor. As três falhas que restam são da geração do LLM (palavras do gabarito e confiança acima do teto). Três rodadas seguidas com o código final (`golden-2026-10-20-v7-36-final-1` a `-3`) deram 31, 33 e 31: P1.2, P4.2 e P6.1 falham nas três, P2.3 e P4.3 oscilam, e rota (97%) e recusa (100%) não variam. Depois dessas rodadas, a P4.2 passou a sair do SQL (agrupamento por modalidade) e teve o gabarito refeito para a v7; na sequência P4.1 → P4.2 → P4.3 pela API, as três passam, e a rodada seguinte (`golden-2026-10-20-v7-36-auditoria`) deu **32/36**. Com os gabaritos da P1.2 e da P6.1 refeitos para a v7, a rodada de 2026-10-21 (`golden-2026-10-21-v7-36`) deu **35/36 (97%)**: só a P3.2 falhou, por variação da redação do LLM. Na busca híbrida dos 47 casos, hit@10 de 0,87 na v7 contra 0,91 na v6. Detalhes em [docs/registro_execucao_v6.md](docs/registro_execucao_v6.md);
 - scripts de instalação (`scripts/setup.ps1`/`setup.sh`) e de download dos modelos com hash conferido (`scripts/models.ps1`/`models.sh`);
@@ -189,7 +189,7 @@ Já estão implementados:
 
 ### Corpus e índice
 
-As bases oficiais da v6 são:
+As bases oficiais, as mesmas na v6 e na v7, são:
 
 - `contratos_estruturado`;
 - `editais_normativo`;
@@ -198,16 +198,16 @@ As bases oficiais da v6 são:
 
 mais o suplemento sintético `emails_sinteticos` (25 conversas geradas pelo tutor, 20 públicas e 5 restritas; [docs/emails_sinteticos.md](docs/emails_sinteticos.md)).
 
-A base ativa é a **v7**, o censo de contratos e publicações de 2025, desde 2026-10-19: 106.667 registros em `contratacoes`, 144.112 chunks e 143.299 vetores, resumidos em `CORPUS_INVENTORY.md`. Os dados (5,3 GB) ficam fora do git e cada integrante baixa na própria máquina (README). A v6 (1.400 arquivos; manifesto arquivado em [archive/corpus_manifest_v6.yaml](archive/corpus_manifest_v6.yaml)) é a referência das medições de regressão. O histórico de reconstrução do inventário entre as versões está em `data/inventory/DIFF_v2_v3.md`, `DIFF_v3_v4.md`, `DIFF_v4_v5.md` e `DIFF_v5_v6.md`.
+A base ativa é a **v7**, o censo de contratos e publicações de 2025, desde 2026-10-19: 106.667 registros em `contratacoes`, 144.112 chunks e 144.112 vetores (um por chunk desde 2026-10-26), resumidos em `CORPUS_INVENTORY.md`. Os dados (5,3 GB) ficam fora do git e cada integrante baixa na própria máquina (README). A v6 (1.400 arquivos; manifesto arquivado em [archive/corpus_manifest_v6.yaml](archive/corpus_manifest_v6.yaml)) é a referência das medições de regressão. O histórico de reconstrução do inventário entre as versões está em `data/inventory/DIFF_v2_v3.md`, `DIFF_v3_v4.md`, `DIFF_v4_v5.md` e `DIFF_v5_v6.md`.
 
-O índice oficial vigente ([index/manifest.json](index/manifest.json)) usa embeddings `Qwen3-Embedding-0.6B.Q8_0` (dimensão 1024) em índice FAISS (`index/*/vectors.faiss`), gerados a partir de `data/normalized/v6/documents.jsonl`. Depois da recuperação OCR de 2026-10-07 ([src/corpus_quality.py](src/corpus_quality.py), relatório em [data/inventory/qualidade_v6.json](data/inventory/qualidade_v6.json)), ele tem **5.090 vetores** da v6, mais os 25 das conversas sintéticas (**5.115 no total**), sem trechos ilegíveis:
+O índice oficial ([index/manifest.json](index/manifest.json)) usa embeddings `Qwen3-Embedding-0.6B.Q8_0` (dimensão 1024) em índice FAISS (`index/*/vectors.faiss`); na v7, são os 144.112 vetores acima. O índice da v6, que continua como referência, foi gerado a partir de `data/normalized/v6/documents.jsonl`. Depois da recuperação OCR de 2026-10-07 ([src/corpus_quality.py](src/corpus_quality.py), relatório em [data/inventory/qualidade_v6.json](data/inventory/qualidade_v6.json)), ele tinha **5.090 vetores** da v6, mais os 25 das conversas sintéticas (**5.115 no total**), sem trechos ilegíveis:
 
 - 625 chunks de `contratos_estruturado`;
 - 1.557 chunks de `editais_normativo`;
 - 1.997 chunks de `atas_conversacional`;
 - 911 chunks de `pca_agregado`.
 
-Foram preservados os vetores dos textos inalterados. A recuperação produziu 305 novos registros vetoriais a partir de 283 textos distintos, com o mesmo checkpoint e configuração do índice. Os 826 chunks anteriormente excluídos foram substituídos por texto legível e nova segmentação: 52 páginas de 3 atas passaram pelo Tesseract (`por`), e os códigos `/U0044` de 7 páginas dos Decretos 48.816 e 48.760 foram decodificados, inclusive nos cabeçalhos de páginas majoritariamente legíveis. Números de página permanecem junto do parágrafo ou seção, sem virar chunks isolados. O manifesto histórico da coleta foi recuperado por hash, sem alterar o manifesto atual ou os arquivos brutos. Detalhes em [eval/runs/v6-ocr-recovery.json](eval/runs/v6-ocr-recovery.json). SQLite e Neon foram remontados em 2026-10-09 (schema 7, com `fornecedor_cnpj`) e comparados linha a linha: `contratacoes` tem 810 linhas (455 contratos assinados e 355 compras publicadas, 185 delas vindas da base agregada) e `pca_planos`, 1.
+Foram preservados os vetores dos textos inalterados. A recuperação produziu 305 novos registros vetoriais a partir de 283 textos distintos, com o mesmo checkpoint e configuração do índice. Os 826 chunks anteriormente excluídos foram substituídos por texto legível e nova segmentação: 52 páginas de 3 atas passaram pelo Tesseract (`por`), e os códigos `/U0044` de 7 páginas dos Decretos 48.816 e 48.760 foram decodificados, inclusive nos cabeçalhos de páginas majoritariamente legíveis. Números de página permanecem junto do parágrafo ou seção, sem virar chunks isolados. O manifesto histórico da coleta foi recuperado por hash, sem alterar o manifesto atual ou os arquivos brutos. Detalhes em [eval/runs/v6-ocr-recovery.json](eval/runs/v6-ocr-recovery.json). Na v6, SQLite e Neon foram remontados em 2026-10-09 (schema 7, com `fornecedor_cnpj`) e comparados linha a linha: `contratacoes` tinha 810 linhas (455 contratos assinados e 355 compras publicadas, 185 delas vindas da base agregada) e `pca_planos`, 1.
 
 **Limitações conhecidas da v6:**
 - os indicadores do PCA (`pca_agregado`) estão praticamente ausentes do corpus coletado (só um PCA confirmado, da Secretaria de Saúde estadual);
@@ -234,8 +234,7 @@ As tarefas são distribuídas entre os integrantes a cada encontro conforme as n
 
 ### Frentes atuais
 
-- Preparação do Demo Day (23/10): ensaio pelo site publicado em 21/10.
-- Avaliação na v7: golden set de 36 casos em 31/36 (2026-10-19).
+O Demo Day foi em 23/10/2026, com ensaio pelo site publicado em 21/10. Depois dele, o trabalho seguiu nas pendências abaixo, e o golden set está em 36/36 desde as rodadas de 2026-10-27 (ver "Estado atual").
 
 ### Pendências em aberto
 

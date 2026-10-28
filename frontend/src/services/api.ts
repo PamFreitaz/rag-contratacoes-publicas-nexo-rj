@@ -2,13 +2,16 @@
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
 
-// Consultas RAG podem levar bem mais que as de catálogo: o backend espera até 180 s pelo LLM
-// (GENERATION_TIMEOUT), mais o tempo de busca. Cada service escolhe seu limite.
+// Consultas RAG podem levar bem mais que as de catálogo. Cada service escolhe seu limite.
 export const TIMEOUT_DEFAULT_MS = 20_000;
 // Explorar acervo pode pagar a primeira carga do snapshot do JSONL (~7 s);
 // 30 s cobre esse piso frio sem esconder falhas verdadeiras do servidor.
 export const TIMEOUT_CATALOG_MS = 30_000;
-export const TIMEOUT_QUERY_MS = 240_000;
+// Com o .env.example do backend, a geração sozinha pode esperar o ECOA duas vezes
+// (GENERATION_TIMEOUT=180 e GENERATION_MAX_RETRIES=1), além da reformulação (até 60 s)
+// e da busca; em 2026-10-14 uma consulta levou 400 s. Desistir antes disso descartava
+// uma resposta que o backend ainda entregava e gravava no histórico.
+export const TIMEOUT_QUERY_MS = 600_000;
 
 export type ApiErrorKind = 'config' | 'network' | 'timeout' | 'http';
 

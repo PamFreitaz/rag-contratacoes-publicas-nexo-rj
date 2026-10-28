@@ -25,7 +25,8 @@ export async function checkBackend({ baseUrl, query, fetchImpl = fetch, log = co
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(body === undefined ? 20_000 : 240_000),
+      // A pergunta espera o mesmo que o site (TIMEOUT_QUERY_MS em src/services/api.ts).
+      signal: AbortSignal.timeout(body === undefined ? 20_000 : 600_000),
     });
     if (!response.ok) throw new Error(`${endpoint}: HTTP ${response.status}`);
     return response.json();
@@ -35,10 +36,25 @@ export async function checkBackend({ baseUrl, query, fetchImpl = fetch, log = co
     const health = await request('/health');
     if (health?.status !== 'ok') throw new Error('/health não retornou status ok.');
     log('OK: API online.');
+    // A API sobe mesmo sem os dados baixados: só o resumo e o catálogo mostram se o acervo carregou.
+    const summary = await request('/api/v1/project/summary');
+    if (!(summary?.total_documentos > 0) || !Array.isArray(summary.bases) || summary.bases.length === 0) {
+      throw new Error('/api/v1/project/summary sem documentos: confira os dados do acervo.');
+    }
+    log(`OK: acervo ${summary.versao_corpus ?? ''} com ${summary.total_documentos} documentos.`);
+    const contratacoes = await request('/api/v1/explore/contratacoes?limit=1');
+    if (!Array.isArray(contratacoes) || contratacoes.length === 0) {
+      throw new Error('/api/v1/explore/contratacoes sem registros: confira os dados do acervo.');
+    }
+    log('OK: catálogo de contratações disponível.');
     if (query !== undefined) {
       const result = await request('/api/v1/query', { query, top_k: 5 });
       if (!result?.query_id || typeof result.answer !== 'string' || !result.answer.trim()) throw new Error('Resposta fora do contrato esperado.');
-      log(`OK: consulta respondida; query_id=${result.query_id}.`);
+      // Recusa ou resposta sem fonte não prova que o pipeline encontrou o acervo.
+      if (result.is_refusal || !Array.isArray(result.sources_used) || result.sources_used.length === 0) {
+        throw new Error(`A pergunta foi recusada ou veio sem fontes; query_id=${result.query_id}.`);
+      }
+      log(`OK: consulta respondida com ${result.sources_used.length} fonte(s); query_id=${result.query_id}.`);
     }
     return true;
   } catch (error) {

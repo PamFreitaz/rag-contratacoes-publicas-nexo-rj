@@ -13,7 +13,7 @@ Pré-requisitos: **Node.js 22 (LTS)** e o backend rodando em `http://localhost:8
 ```bash
 cd frontend
 npm ci
-npm run check:backend   # verifica API, corpus e banco; não chama o LLM
+npm run check:backend   # verifica a API e o acervo; não chama o LLM
 npm run dev             # abra http://localhost:5173
 ```
 
@@ -29,14 +29,12 @@ O diagnóstico rápido não garante que o LLM esteja disponível nem testa CORS;
 | --- | --- |
 | `npm ci` | Instala as versões do `package-lock.json` |
 | `npm run dev` | Servidor de desenvolvimento na porta 5173 |
-| `npm run check:backend` | Diagnóstico HTTP da API, corpus e banco estruturado |
-| `npm run check:query` | Diagnóstico + pergunta real; grava consulta no histórico do backend |
+| `npm run check:backend` | Diagnóstico HTTP: `/health`, resumo do acervo e catálogo de contratações |
+| `npm run check:query` | Diagnóstico + pergunta real, que precisa vir com fontes; grava consulta no histórico do backend |
 | `npm test` | Testes offline da interface e dos diagnósticos |
 | `npm run build` | Checagem de tipos e build de produção em `dist/` |
 | `npm run build:pages` | Build + cópia para `assets/` e `docs/` (GitHub Pages) |
 | `npm run preview` | Serve o build de `dist/` localmente |
-| `npm run check:backend` | Verifica o `/health` do backend configurado |
-| `npm run check:query` | Executa uma pergunta real no pipeline RAG |
 | `npm run check:pages` | Valida a URL HTTPS do backend antes da publicação |
 | `npm run check:pages-build` | Confere o index e a URL incorporada ao bundle em `dist/` |
 

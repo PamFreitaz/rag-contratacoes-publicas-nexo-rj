@@ -16,6 +16,9 @@ o problema, a solução, as tecnologias e uma demonstração do sistema. O víde
 está na pasta do projeto no Google Drive, a mesma dos dados da v7 (veja
 [2. Dados](#2-dados)); dá para assistir direto no navegador, sem baixar.
 
+📁 Pasta do projeto no Google Drive (vídeo e dados da v7):
+<https://drive.google.com/drive/folders/107xSLhfgGC5FQEngGBvXwQhCcCBPptmS?usp=drive_link>
+
 ## O problema
 
 Todo órgão público publica as suas contratações no PNCP, mas o portal só permite
@@ -214,11 +217,11 @@ configuração e o histórico das avaliações, está em
 
 | Integrante | GitHub |
 |---|---|
+| Pâmela de Freitas | [@PamFreitaz](https://github.com/PamFreitaz) |
 | Diogo Oliveira Vieira | [@Diogooliveira10](https://github.com/Diogooliveira10) |
 | Eduarda Silva Santos | [@Etuarda](https://github.com/Etuarda) |
 | João Pedro Félix Reis | [@sevenRevy](https://github.com/sevenRevy) |
 | Marco Aurélio | [@MarcoBritoDev](https://github.com/MarcoBritoDev) |
-| Pâmela de Freitas | [@PamFreitaz](https://github.com/PamFreitaz) |
 | Renato Lemos (coordenação) | [@limongi1234](https://github.com/limongi1234) |
 
 Repositório original do grupo (privado, acesso da equipe):

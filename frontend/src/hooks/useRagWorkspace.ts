@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
-import type { ConversationHistoryTurn } from '../types/api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ConversationHistoryTurn, HistoryItem } from '../types/api';
 import type { Avaliacao, ConversationTurn } from '../types/app';
 import { ApiError } from '../services/api';
+import { getSessionHistory } from '../services/history.service';
 import { queryRag } from '../services/query.service';
 import { errorMessage } from './useApiResource';
 
@@ -31,6 +32,13 @@ function historyFrom(turns: ConversationTurn[]): ConversationHistoryTurn[] {
   }));
 }
 
+function turnFrom(item: HistoryItem, sessionId: string): ConversationTurn {
+  return {
+    response: { ...item.resposta, query_id: item.query_id, session_id: sessionId },
+    feedback: item.feedback.at(-1)?.avaliacao,
+  };
+}
+
 /** Conversa atual, com sessão isolada por aba e contexto reenviado ao backend. */
 export function useRagWorkspace() {
   const initialSession = useRef<string | null>(readStoredSession());
@@ -38,7 +46,10 @@ export function useRagWorkspace() {
   const turnsRef = useRef<ConversationTurn[]>([]);
   const [turns, setTurnsState] = useState<ConversationTurn[]>([]);
   const [sessionId, setSessionIdState] = useState<string | null>(initialSession.current);
-  const [pendingQuery, setPendingQuery] = useState<string | null>(null);
+  // A ref acompanha o estado para submitQuery ver na hora o que
+  // startNewConversation acabou de limpar, sem esperar o próximo render.
+  const pendingQueryRef = useRef<string | null>(null);
+  const [pendingQuery, setPendingQueryState] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<ApiError['kind'] | null>(null);
   const failedQueryRef = useRef<string | null>(null);
@@ -58,12 +69,42 @@ export function useRagWorkspace() {
     storeSession(next);
   }, []);
 
+  const setPendingQuery = useCallback((next: string | null) => {
+    pendingQueryRef.current = next;
+    setPendingQueryState(next);
+  }, []);
+
+  // Depois de recarregar a página, a sessão volta do sessionStorage, mas as respostas não
+  // ficam no navegador: a conversa é remontada pelo histórico que o backend guardou.
+  useEffect(() => {
+    const restoredSession = initialSession.current;
+    if (!restoredSession) return;
+    let active = true;
+    getSessionHistory(restoredSession)
+      .then((items) => {
+        // Nova conversa (ou sessão trocada após 422) antes da resposta: o histórico é de outra.
+        if (!active || sessionIdRef.current !== restoredSession || items.length === 0) return;
+        const restored = [...items].reverse().map((item) => turnFrom(item, restoredSession));
+        // Uma pergunta enviada enquanto o histórico carregava fica depois das restauradas.
+        setTurns((current) => [
+          ...restored.filter((turn) => !current.some((c) => c.response.query_id === turn.response.query_id)),
+          ...current,
+        ]);
+      })
+      .catch(() => {
+        // Sem o histórico (backend fora do ar, sessão expirada), a conversa começa vazia como antes.
+      });
+    return () => {
+      active = false;
+    };
+  }, [setTurns]);
+
   const loading = pendingQuery !== null;
 
   const submitQuery = useCallback(
     async (queryText: string) => {
       const normalized = queryText.trim();
-      if (!normalized || pendingQuery !== null) return;
+      if (!normalized || pendingQueryRef.current !== null) return;
 
       const requestId = ++requestIdRef.current;
       queryStartedAtRef.current = Date.now();
@@ -105,7 +146,7 @@ export function useRagWorkspace() {
         if (requestId === requestIdRef.current) setPendingQuery(null);
       }
     },
-    [pendingQuery, setSessionId, setTurns]
+    [setPendingQuery, setSessionId, setTurns]
   );
 
   const retryQuery = useCallback(() => {
@@ -129,7 +170,7 @@ export function useRagWorkspace() {
     setError(null);
     setErrorKind(null);
     failedQueryRef.current = null;
-  }, [setSessionId, setTurns]);
+  }, [setPendingQuery, setSessionId, setTurns]);
 
   return {
     turns,

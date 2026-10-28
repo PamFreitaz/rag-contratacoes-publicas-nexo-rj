@@ -1,8 +1,8 @@
-'''Confere se um clone novo tem tudo para consultar o corpus v6.
+'''Confere se um clone novo tem tudo para consultar o acervo.
 
-A v6 está versionada no Git (SQLite estruturado, índice FAISS, snapshot de
-embeddings, documentos normalizados), então não é preciso recoletar para
-consultar. Este script verifica os artefatos, resolve as configurações ativas
+Os dados da v7 (SQLite estruturado, índice FAISS, documentos normalizados) ficam
+fora do Git: vêm do pacote do Google Drive (README principal, passo 2), então não
+é preciso recoletar para consultar. Este script verifica os artefatos, resolve as configurações ativas
 (provedor de embeddings, modo do LLM, orçamento de contexto) e falha com uma
 mensagem acionável quando algo essencial falta.
 
@@ -35,7 +35,7 @@ def conferir(caminho: Path, descricao: str) -> None:
         problemas.append(descricao)
 
 
-print("== Artefatos da v6 ==")
+print("== Dados do acervo ==")
 conferir(RAIZ / "data" / "structured" / "base_estruturada.sqlite", "SQLite estruturado")
 for base in BASES:
     pasta = RAIZ / "index" / base
@@ -65,5 +65,7 @@ if not (RAIZ / ".env").exists():
 
 if problemas:
     print(f"\n{len(problemas)} item(ns) essencial(is) ausente(s).", file=sys.stderr)
+    print("Baixe o pacote de dados da v7 e extraia dentro de backend/ (README principal, passo 2);"
+          " depois rode de novo: python scripts/bootstrap_check.py", file=sys.stderr)
     sys.exit(1)
-print("\nTudo no lugar para consultar o corpus v6.")
+print("\nTudo no lugar para consultar o acervo.")

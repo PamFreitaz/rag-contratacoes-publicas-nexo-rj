@@ -1,6 +1,7 @@
-# Roda a suíte offline a cada push e pull request.
+# Roda a suíte offline a cada push e pull request: backend e site, em paralelo.
 # Os testes marcados com "llm" chamam o servidor da turma e ficam de fora;
 # os demais não usam .env, Postgres nem o modelo de rerank (ver tests/conftest.py).
+# Os testes do site trocam o fetch por um falso: nenhum precisa do backend no ar.
 name: Testes
 
 on:
@@ -38,3 +39,30 @@ jobs:
 
       - name: Rodar testes offline
         run: python -m pytest tests/ -m "not llm" -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      # Mesma versão que o README pede para rodar o site.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # Vitest e os testes dos scripts de publicação no GitHub Pages.
+      - name: Rodar testes
+        run: npm test
+
+      # tsc -b confere os tipos antes do build do Vite.
+      - name: Conferir tipos e gerar o build
+        run: npm run build

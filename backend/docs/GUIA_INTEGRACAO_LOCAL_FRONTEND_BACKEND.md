@@ -329,14 +329,14 @@ Teste de recusa segura (dado bancário nunca é fornecido):
 Qual é o número da conta bancária e a agência do fornecedor que venceu o maior contrato de ambulâncias?
 ```
 
-Uma pergunta fora do tema, como "Qual é a capital da França?", hoje é
-respondida pelo modo de conversa (`CONVERSATION_MODE=llm`) em vez de recusada;
-o defeito está nas pendências do [ARQUITETURA.md](../ARQUITETURA.md).
+Uma pergunta fora do tema, como "Qual é a capital da França?", não vira
+conversa: segue para o pipeline, que a recusa como fora de escopo (testes em
+`tests/test_conversation_intent.py` e `tests/test_response_quality_regressions.py`).
 
 O modelo de rerank é baixado (na primeira vez) e carregado quando a API sobe, em
 segundo plano (`RERANK_PRELOAD=true`, padrão); uma pergunta feita logo depois
 de subir pode esperar esse carregamento. O frontend
-atual espera até 240 segundos por uma consulta; se a primeira tentativa exceder
+atual espera até 10 minutos por uma consulta; se a primeira tentativa exceder
 esse tempo durante o download do modelo, aguarde o backend terminar a preparação
 e envie a pergunta novamente.
 

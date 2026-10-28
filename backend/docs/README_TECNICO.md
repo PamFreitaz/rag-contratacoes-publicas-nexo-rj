@@ -828,7 +828,7 @@ frontend de novo.
 Configuração do `.env` usada na demo (ECOA como modelo principal, OpenRouter de
 reserva). Medido em 2026-10-14: com o padrão de 180 s e uma nova tentativa, uma
 consulta esperou até 400 s no ECOA; com o limite de 60 s, as consultas lentas
-ficaram entre 69 e 101 s, abaixo do limite de 240 s do site. Cada chamada ao
+ficaram entre 69 e 101 s, bem abaixo do limite de 10 minutos do site. Cada chamada ao
 OpenRouter também tem prazo total (`OPENROUTER_TIMEOUT`, 60 s por padrão): o
 timeout do SDK é entre pacotes, e o OpenRouter manda sinais de processamento
 enquanto gera, então uma resposta lenta chegou a levar 277 s (golden de

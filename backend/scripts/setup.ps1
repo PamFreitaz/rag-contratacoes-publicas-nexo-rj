@@ -1,14 +1,18 @@
 # Bootstrap do backend RAG em uma máquina nova (Windows).
 # Cria o .venv, instala o lock de dependências, copia .env.example -> .env
-# quando faltar, e confere os artefatos da v6.
+# quando faltar, e confere os dados do acervo (pacote da v7, baixado à parte).
 # Uso: powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
 if (-not (Test-Path .venv)) {
     Write-Host "== Criando .venv =="
+    # Sem o 3.12 instalado, o py escreve um erro, que com "Stop" pararia o script
+    # antes de tentar o python padrão.
+    $ErrorActionPreference = "Continue"
     py -3.12 -m venv .venv 2>$null
-    if ($LASTEXITCODE -ne 0) { python -m venv .venv }
+    $ErrorActionPreference = "Stop"
+    if (-not (Test-Path .venv\Scripts\python.exe)) { python -m venv .venv }
 }
 & .\.venv\Scripts\python -m pip install --upgrade pip | Out-Null
 & .\.venv\Scripts\pip install -r requirements-lock.txt

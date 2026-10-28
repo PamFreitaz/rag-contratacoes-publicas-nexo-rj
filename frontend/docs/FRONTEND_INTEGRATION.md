@@ -42,6 +42,7 @@ Fluxo: `Página/Componente → hook → service → api.ts → FastAPI`.
 4. Perguntas seguintes reenviam o mesmo id e até dez trocas anteriores em `historico`.
 5. Se uma sessão restaurada produzir `422`, o frontend descarta o id e repete uma única vez sem ele.
 6. “Nova conversa” limpa respostas e sessão.
+7. Ao recarregar a página, a sessão volta do `sessionStorage` e a conversa é remontada pelo `GET /api/v1/history` dessa sessão (com o feedback já dado). Sem o histórico, ela começa vazia e mantém a sessão.
 
 O conteúdo das respostas não é persistido no navegador. `localStorage` guarda somente a preferência visual de sidebar recolhida.
 
